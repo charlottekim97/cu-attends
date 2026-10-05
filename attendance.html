@@ -27,6 +27,18 @@
       margin: 0;
       cursor: pointer;
     }
+    .faculty-nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(252, 211, 77, 0.5);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.85rem;
+      color: #FDE68A;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -41,7 +53,8 @@
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Faculty Member</span></li>
+      <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
 
@@ -110,6 +123,19 @@
 
   <script>
     document.getElementById("attDate").value = new Date().toISOString().split("T")[0];
+
+    function loadTeacherNav() {
+      const stored = localStorage.getItem("session_teacher_profile");
+      if (stored) {
+        try {
+          const profile = JSON.parse(stored);
+          if (profile.name) {
+            document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${profile.name}`;
+          }
+        } catch (e) {}
+      }
+    }
+    loadTeacherNav();
 
     function getStudents() {
       const stored = localStorage.getItem("cu_students");

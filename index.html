@@ -158,6 +158,26 @@
         localStorage.setItem("session_parent_student_id", studentId);
         window.location.href = "parent-dashboard.html";
       } else {
+        // Parse teacher name from [lastname].[firstname]@g.cu.edu.ph
+        const usernamePart = inputVal.split("@")[0];
+        let teacherDisplayName = "Faculty Member";
+
+        if (usernamePart.includes(".")) {
+          const parts = usernamePart.split(".");
+          const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+          teacherDisplayName = `Prof. ${cap(parts[1])}${cap(parts[0])}`;
+        } else {
+          teacherDisplayName = `Prof. ${usernamePart.toUpperCase()}`;
+        }
+
+        const facultyProfile = {
+          name: teacherDisplayName,
+          email: inputVal,
+          role: "Faculty Instructor",
+          loginTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        localStorage.setItem("session_teacher_profile", JSON.stringify(facultyProfile));
         window.location.href = "dashboard.html";
       }
     }

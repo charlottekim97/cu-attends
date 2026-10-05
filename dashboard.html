@@ -6,6 +6,50 @@
   <title>Teacher Dashboard - CU Attends</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    .teacher-welcome-card {
+      background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF5 100%);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--cu-gold);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+    .teacher-welcome-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .teacher-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--cu-maroon);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--cu-gold);
+    }
+    .faculty-nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(252, 211, 77, 0.5);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.85rem;
+      color: #FDE68A;
+      font-weight: 600;
+    }
     .stat-card {
       border-radius: 8px;
       padding: 1.25rem;
@@ -17,7 +61,7 @@
       font-weight: 800;
       margin-top: 0.35rem;
     }
-    /* Basic slideshow */
+    /* Slideshow */
     .slide-box {
       position: relative;
       height: 250px;
@@ -124,11 +168,29 @@
       <li><a href="dashboard.html" class="active">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Faculty Member</span></li>
+      <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
 
   <main class="container">
+    <!-- Teacher Acknowledgment Card -->
+    <div class="teacher-welcome-card">
+      <div class="teacher-welcome-left">
+        <div class="teacher-avatar" id="teacherInitials">CU</div>
+        <div>
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Welcome Back</div>
+          <h2 style="color: var(--cu-maroon); font-size: 1.4rem; margin: 0.1rem 0;" id="teacherProfileName">Faculty Instructor</h2>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Logged in as: <strong id="teacherProfileEmail" style="color: var(--text-main);">teacher@g.cu.edu.ph</strong>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">Active Academic Session</span>
+      </div>
+    </div>
+
     <h2 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Faculty Attendance Dashboard</h2>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Live Program Attendance & Truancy Overview</p>
 
@@ -225,7 +287,27 @@
   </footer>
 
   <script>
+    function loadFacultyProfile() {
+      const stored = localStorage.getItem("session_teacher_profile");
+      if (stored) {
+        try {
+          const profile = JSON.parse(stored);
+          document.getElementById("teacherProfileName").innerText = profile.name || "Faculty Member";
+          document.getElementById("teacherProfileEmail").innerText = profile.email || "faculty@g.cu.edu.ph";
+          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${profile.name || 'Faculty'}`;
+
+          const cleanName = (profile.name || "CU").replace(/Prof\.\s*/i, "").trim();
+          const initials = cleanName.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+          document.getElementById("teacherInitials").innerText = initials || "CU";
+        } catch (e) {
+          // Fallback to default
+        }
+      }
+    }
+
     function loadDashboardData() {
+      loadFacultyProfile();
+
       const students = JSON.parse(localStorage.getItem("cu_students") || "[]");
       const summary = JSON.parse(localStorage.getItem("cu_last_summary") || '{"present":0,"late":0,"absent":0}');
       const history = JSON.parse(localStorage.getItem("cu_attendance_history") || "[]");
