@@ -127,14 +127,14 @@
     </div>
   </main>
 
-  <!-- Add Student Modal (Responsive & Scrollable for mobile screens) -->
+  <!-- Add Student Modal -->
   <div class="modal-backdrop" id="addStudentModal">
     <div class="modal-box">
       <h3 style="color: var(--cu-maroon); margin-bottom: 1rem;">Register Student</h3>
       <form onsubmit="saveSingleStudent(event)">
         <div class="form-group">
           <label>Student ID</label>
-          <input type="text" id="mId" placeholder="e.g. 2024-00123" required>
+          <input type="text" id="mId" placeholder="e.g. 1234567" required>
         </div>
         <div class="form-group">
           <label>Student Full Name</label>
@@ -177,18 +177,16 @@
   </div>
 
   <footer>
-    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.[cite: 6]
   </footer>
 
   <script>
-    // Strict email format validation rejecting missing domains, invalid TLDs, or dummy domains
     function isValidEmail(email) {
       if (!email) return false;
       const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
       if (!emailPattern.test(email)) return false;
       
       const domain = email.split('@')[1].toLowerCase();
-      // Block common dummy entries
       const blacklisted = ["test.com", "example.com", "fake.com", "mailinator.com", "none.com"];
       return !blacklisted.includes(domain);
     }
@@ -399,7 +397,6 @@
       document.getElementById("addStudentModal").style.display = "none"; 
     }
 
-    // Close modal on click outside modal-box
     window.onclick = function(event) {
       const modal = document.getElementById("addStudentModal");
       if (event.target === modal) {
