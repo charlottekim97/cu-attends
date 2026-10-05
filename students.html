@@ -69,7 +69,7 @@
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html" class="active">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Faculty Member</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
@@ -95,7 +95,6 @@
         </small>
       </div>
 
-      <!-- Filters -->
       <div class="grid-4" style="margin-bottom: 1.25rem;">
         <div>
           <label>Filter Course</label>
@@ -140,7 +139,6 @@
     </div>
   </main>
 
-  <!-- Add Student Modal -->
   <div class="modal-backdrop" id="addStudentModal">
     <div class="modal-box">
       <h3 style="color: var(--cu-maroon); margin-bottom: 1rem;">Register Student</h3>
@@ -200,9 +198,9 @@
       if (stored) {
         try {
           const profile = JSON.parse(stored);
-          if (profile.name) {
-            document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${profile.name}`;
-          }
+          let formattedName = profile.name || "Instructor";
+          formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
+          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
         } catch (e) {}
       }
     }

@@ -160,20 +160,24 @@
       } else {
         // Parse teacher name from [lastname].[firstname]@g.cu.edu.ph
         const usernamePart = inputVal.split("@")[0];
-        let teacherDisplayName = "Faculty Member";
+        let teacherDisplayName = "Instructor";
 
         if (usernamePart.includes(".")) {
           const parts = usernamePart.split(".");
-          const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-          teacherDisplayName = `Prof. ${cap(parts[1])}${cap(parts[0])}`;
+          const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+          const lastName = capitalize(parts[0]);
+          const firstName = capitalize(parts[1]);
+          // Formats with clean space: Instructor Firstname Lastname
+          teacherDisplayName = `Instructor ${firstName}${lastName}`;
         } else {
-          teacherDisplayName = `Prof. ${usernamePart.toUpperCase()}`;
+          const formatted = usernamePart.charAt(0).toUpperCase() + usernamePart.slice(1).toLowerCase();
+          teacherDisplayName = `Instructor ${formatted}`;
         }
 
         const facultyProfile = {
           name: teacherDisplayName,
           email: inputVal,
-          role: "Faculty Instructor",
+          role: "Instructor",
           loginTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 

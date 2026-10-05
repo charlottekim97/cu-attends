@@ -53,7 +53,7 @@
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Faculty Member</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
@@ -68,7 +68,6 @@
         <button type="button" class="btn btn-gold" onclick="markAll('present')">✓ Mark All Present</button>
       </div>
 
-      <!-- Dropdowns empty by default until students exist -->
       <div class="grid-4" style="margin-bottom: 1.5rem;">
         <div>
           <label for="attDate">Date</label>
@@ -129,9 +128,9 @@
       if (stored) {
         try {
           const profile = JSON.parse(stored);
-          if (profile.name) {
-            document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${profile.name}`;
-          }
+          let formattedName = profile.name || "Instructor";
+          formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
+          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
         } catch (e) {}
       }
     }

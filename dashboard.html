@@ -32,7 +32,8 @@
       background: var(--cu-maroon);
       color: #FFFFFF;
       font-weight: 800;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -168,7 +169,7 @@
       <li><a href="dashboard.html" class="active">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Faculty Member</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
@@ -180,7 +181,7 @@
         <div class="teacher-avatar" id="teacherInitials">CU</div>
         <div>
           <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Welcome Back</div>
-          <h2 style="color: var(--cu-maroon); font-size: 1.4rem; margin: 0.1rem 0;" id="teacherProfileName">Faculty Instructor</h2>
+          <h2 style="color: var(--cu-maroon); font-size: 1.4rem; margin: 0.1rem 0;" id="teacherProfileName">Instructor</h2>
           <div style="font-size: 0.85rem; color: var(--text-muted);">
             Logged in as: <strong id="teacherProfileEmail" style="color: var(--text-main);">teacher@g.cu.edu.ph</strong>
           </div>
@@ -292,13 +293,25 @@
       if (stored) {
         try {
           const profile = JSON.parse(stored);
-          document.getElementById("teacherProfileName").innerText = profile.name || "Faculty Member";
+          
+          // Re-normalize name to ensure "Instructor" title and clean spacing
+          let formattedName = profile.name || "Instructor";
+          formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
+          
+          document.getElementById("teacherProfileName").innerText = formattedName;
           document.getElementById("teacherProfileEmail").innerText = profile.email || "faculty@g.cu.edu.ph";
-          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${profile.name || 'Faculty'}`;
+          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
 
-          const cleanName = (profile.name || "CU").replace(/Prof\.\s*/i, "").trim();
-          const initials = cleanName.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
-          document.getElementById("teacherInitials").innerText = initials || "CU";
+          // Extract initials from first and last name after removing title
+          const cleanName = formattedName.replace(/^Instructor\s*/i, "").trim();
+          const nameWords = cleanName.split(/\s+/).filter(Boolean);
+          let initials = "CU";
+          if (nameWords.length >= 2) {
+            initials = nameWords[0][0] + nameWords[1][0];
+          } else if (nameWords.length === 1 && nameWords[0].length > 0) {
+            initials = nameWords[0].substring(0, 2);
+          }
+          document.getElementById("teacherInitials").innerText = initials.toUpperCase();
         } catch (e) {
           // Fallback to default
         }
