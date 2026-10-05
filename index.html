@@ -137,17 +137,24 @@
         hint.innerHTML = "Format: <code>[lastname].[firstname]@g.cu.edu.ph</code>";
       } else {
         emailInput.placeholder = "[student'sID]@g.cu.edu.ph";
-        hint.innerHTML = "Format: <code>[student'sID]@g.cu.edu.ph</code> (Child's Student ID)";
+        hint.innerHTML = "Format: <code>[student'sID]@g.cu.edu.ph</code> (Child's Institutional ID)";
       }
     }
 
     function handleLogin(e) {
       e.preventDefault();
       const role = document.getElementById("userRole").value;
-      const inputVal = document.getElementById("userEmail").value.trim();
+      const inputVal = document.getElementById("userEmail").value.trim().toLowerCase();
+
+      // Enforce strict @g.cu.edu.ph institutional domain requirement
+      if (!inputVal.endsWith("@g.cu.edu.ph")) {
+        alert("Access Denied: You must use your valid institutional email ending with @g.cu.edu.ph");
+        document.getElementById("userEmail").focus();
+        return;
+      }
 
       if (role === "parent") {
-        const studentId = inputVal.split("@")[0].trim();
+        const studentId = inputVal.replace("@g.cu.edu.ph", "").trim();
         localStorage.setItem("session_parent_student_id", studentId);
         window.location.href = "parent-dashboard.html";
       } else {
