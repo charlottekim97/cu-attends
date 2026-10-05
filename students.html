@@ -10,18 +10,30 @@
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 1rem;
     }
     .modal-box {
       background: #FFFFFF;
       padding: 1.5rem;
       border-radius: 8px;
-      width: 90%;
+      width: 100%;
       max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-box::-webkit-scrollbar {
+      width: 6px;
+    }
+    .modal-box::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 4px;
     }
     .upload-zone {
       border: 2px dashed var(--cu-gold);
@@ -70,7 +82,7 @@
         </small>
       </div>
 
-      <!-- Filters (Dynamically populated from data) -->
+      <!-- Filters -->
       <div class="grid-4" style="margin-bottom: 1.25rem;">
         <div>
           <label>Filter Course</label>
@@ -115,14 +127,14 @@
     </div>
   </main>
 
-  <!-- Add Student Modal -->
+  <!-- Add Student Modal (Responsive & Scrollable for mobile screens) -->
   <div class="modal-backdrop" id="addStudentModal">
     <div class="modal-box">
       <h3 style="color: var(--cu-maroon); margin-bottom: 1rem;">Register Student</h3>
       <form onsubmit="saveSingleStudent(event)">
         <div class="form-group">
           <label>Student ID</label>
-          <input type="text" id="mId" placeholder="[student'sID]@g.cu.edu.ph" required>
+          <input type="text" id="mId" placeholder="e.g. 2024-00123" required>
         </div>
         <div class="form-group">
           <label>Student Full Name</label>
@@ -154,9 +166,9 @@
         </div>
         <div class="form-group">
           <label>Parent Personal Email</label>
-          <input type="email" id="mParentEmail" placeholder="" required>
+          <input type="email" id="mParentEmail" placeholder="e.g. parent@gmail.com" required>
         </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-bottom: 0.5rem;">
           <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Profile</button>
         </div>
@@ -169,13 +181,25 @@
   </footer>
 
   <script>
+    // Strict email format validation rejecting missing domains, invalid TLDs, or dummy domains
+    function isValidEmail(email) {
+      if (!email) return false;
+      const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
+      if (!emailPattern.test(email)) return false;
+      
+      const domain = email.split('@')[1].toLowerCase();
+      // Block common dummy entries
+      const blacklisted = ["test.com", "example.com", "fake.com", "mailinator.com", "none.com"];
+      return !blacklisted.includes(domain);
+    }
+
     function getStoredStudents() {
       const stored = localStorage.getItem("cu_students");
       if (!stored) return [];
       try {
         const list = JSON.parse(stored);
         return list.map(st => ({
-          id: st.id || "",
+          id: (st.id || "").replace(/@g\.cu\.edu\.ph/gi, "").trim(),
           name: st.name || "",
           course: st.course || "",
           block: st.block || "",
@@ -243,7 +267,7 @@
         const matchesCourse = !course || s.course === course;
         const matchesBlock = !block || s.block === block;
         const matchesSec = !secCode || secCode === "ALL" || s.secCode === secCode;
-        const matchesSearch = s.name.toLowerCase().includes(search) || s.id.includes(search);
+        const matchesSearch = s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search);
         return matchesCourse && matchesBlock && matchesSec && matchesSearch;
       });
 
@@ -269,8 +293,14 @@
 
     function saveSingleStudent(e) {
       e.preventDefault();
-      const rawId = document.getElementById("mId").value.trim().replace("@g.cu.edu.ph", "");
+      const rawId = document.getElementById("mId").value.trim().replace(/@g\.cu\.edu\.ph/gi, "");
       const emailInput = document.getElementById("mParentEmail").value.trim();
+
+      if (!isValidEmail(emailInput)) {
+        alert("Please enter a valid, existing personal email address (e.g. user@gmail.com, user@yahoo.com).");
+        document.getElementById("mParentEmail").focus();
+        return;
+      }
 
       const newStudent = {
         id: rawId,
@@ -280,13 +310,21 @@
         secCode: document.getElementById("mSecCode").value.trim(),
         subject: document.getElementById("mSubject").value.trim(),
         parent: document.getElementById("mParent").value.trim() || "Parent / Guardian",
-        parentEmail: emailInput || ""
+        parentEmail: emailInput
       };
 
       const students = getStoredStudents();
-      students.push(newStudent);
-      setStoredStudents(students);
+      const existingIdx = students.findIndex(s => s.id === rawId);
+      if (existingIdx !== -1) {
+        if (!confirm(`Student ID "${rawId}" already exists. Overwrite this record?`)) {
+          return;
+        }
+        students[existingIdx] = newStudent;
+      } else {
+        students.push(newStudent);
+      }
 
+      setStoredStudents(students);
       hideModal();
       document.querySelector("#addStudentModal form").reset();
       renderStudents();
@@ -320,9 +358,10 @@
 
           const existing = getStoredStudents();
           let count = 0;
+          let skipped = 0;
 
           rows.forEach(r => {
-            const stuId = String(r["Student ID"] || r["ID"] || r["id"] || "").trim().replace("@g.cu.edu.ph", "");
+            const stuId = String(r["Student ID"] || r["ID"] || r["id"] || "").trim().replace(/@g\.cu\.edu\.ph/gi, "");
             const stuName = String(r["Student Name"] || r["Name"] || r["name"] || "").trim();
             const course = String(r["Course"] || r["course"] || "").trim();
             const block = String(r["Block"] || r["block"] || "").trim();
@@ -330,9 +369,13 @@
             const subject = String(r["Subject"] || r["Subject Description"] || r["Description"] || "").trim();
             const parent = String(r["Parent Name"] || r["Parent"] || r["parent"] || "Parent / Guardian").trim();
             
-            let emailVal = r["Parent Personal Email"] || r["Parent Email"] || r["Email"] || r["email"] || r["personalEmail"] || "";
+            let emailVal = String(r["Parent Personal Email"] || r["Parent Email"] || r["Email"] || r["email"] || r["personalEmail"] || "").trim();
 
             if (stuId && stuName) {
+              if (emailVal && !isValidEmail(emailVal)) {
+                skipped++;
+                emailVal = "";
+              }
               existing.push({ id: stuId, name: stuName, course, block, secCode, subject, parent, parentEmail: emailVal });
               count++;
             }
@@ -340,7 +383,7 @@
 
           setStoredStudents(existing);
           renderStudents();
-          alert(`Successfully imported ${count} students with sections & subjects!`);
+          alert(`Successfully imported ${count} students.${skipped > 0 ? ` (${skipped} invalid email addresses were omitted)` : ''}`);
         } catch (err) {
           alert("Error processing Excel file. Make sure it has valid columns.");
         }
@@ -348,8 +391,21 @@
       reader.readAsArrayBuffer(file);
     }
 
-    function showModal() { document.getElementById("addStudentModal").style.display = "flex"; }
-    function hideModal() { document.getElementById("addStudentModal").style.display = "none"; }
+    function showModal() { 
+      document.getElementById("addStudentModal").style.display = "flex"; 
+    }
+    
+    function hideModal() { 
+      document.getElementById("addStudentModal").style.display = "none"; 
+    }
+
+    // Close modal on click outside modal-box
+    window.onclick = function(event) {
+      const modal = document.getElementById("addStudentModal");
+      if (event.target === modal) {
+        hideModal();
+      }
+    };
 
     populateFilterDropdowns();
     renderStudents();
