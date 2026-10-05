@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - CU Attends</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-split-wrapper {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 2rem;
+      align-items: stretch;
+      margin-top: 1rem;
+    }
+    .gallery-column {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .gallery-img-box {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      min-height: 160px;
+      background: #e5e7eb;
+    }
+    .gallery-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .gallery-tag {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(139, 24, 26, 0.88);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+    @media (max-width: 850px) {
+      .auth-split-wrapper { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header-top">
+    <div class="brand-wrapper">
+      <img src="logo.png" alt="CU Logo" class="brand-logo-img">
+      <span class="brand-title">CU Attends</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="auth-split-wrapper">
+      
+      <!-- Campus Life Gallery -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <h3 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Capitol University Campus</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
+            Automated Student Attendance & Parent Notification System.
+          </p>
+        </div>
+        <div class="gallery-column">
+          <div class="gallery-img-box">
+            <img src="" alt="CU Grounds">
+            <span class="gallery-tag">University Grounds</span>
+          </div>
+          <div class="gallery-img-box">
+            <img src="" alt="Academic Complex">
+            <span class="gallery-tag">Academic Building</span>
+          </div>
+          <div class="gallery-img-box">
+            <img src="" alt="IT Lab">
+            <span class="gallery-tag">IT Lab CL-A</span>
+          </div>
+          <div class="gallery-img-box">
+            <img src="" alt="Students">
+            <span class="gallery-tag">Student Activities</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sign In Form -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+        <h2 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Sign In to CU Attends</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Select your role to access your account.</p>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="userRole">Login As</label>
+            <select id="userRole" onchange="updatePlaceholders()">
+              <option value="faculty" selected>Teacher / Faculty</option>
+              <option value="parent">Parent / Guardian</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="userEmail">Account Email</label>
+            <input type="text" id="userEmail" placeholder="[lastname].[firstname]@g.cu.edu.ph" required>
+            <small id="formatHint" style="display:block; color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem;">
+              Format: <code>[lastname].[firstname]@g.cu.edu.ph</code>
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+  </footer>
+
+  <script>
+    function updatePlaceholders() {
+      const role = document.getElementById("userRole").value;
+      const emailInput = document.getElementById("userEmail");
+      const hint = document.getElementById("formatHint");
+
+      if (role === "faculty") {
+        emailInput.placeholder = "[lastname].[firstname]@g.cu.edu.ph";
+        hint.innerHTML = "Format: <code>[lastname].[firstname]@g.cu.edu.ph</code>";
+      } else {
+        emailInput.placeholder = "[student'sID]@g.cu.edu.ph";
+        hint.innerHTML = "Format: <code>[student'sID]@g.cu.edu.ph</code> (Child's Student ID)";
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const role = document.getElementById("userRole").value;
+      const inputVal = document.getElementById("userEmail").value.trim();
+
+      if (role === "parent") {
+        const studentId = inputVal.split("@")[0].trim();
+        localStorage.setItem("session_parent_student_id", studentId);
+        window.location.href = "parent-dashboard.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Directory - CU Attends</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: #FFFFFF;
+      padding: 1.5rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 520px;
+    }
+    .upload-zone {
+      border: 2px dashed var(--cu-gold);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      background: #FFFDF5;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header-top">
+    <a href="dashboard.html" class="brand-wrapper">
+      <img src="logo.png" alt="CU Logo" class="brand-logo-img">
+      <span class="brand-title">CU Attends</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="attendance.html">Attendance</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="students.html" class="active">Students</a></li>
+      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+    </ul>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="color: var(--cu-maroon);">Student & Parent Directory</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Import a class spreadsheet or manually register students.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-gold" onclick="document.getElementById('excelFileInput').click()">📁 Import .XLSX / CSV</button>
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleExcelUpload(event)">
+          <button class="btn btn-primary" onclick="showModal()">+ Add New Student</button>
+        </div>
+      </div>
+
+      <div class="upload-zone">
+        <small style="color: var(--text-main);">
+          <strong>Excel Column Headers:</strong> 
+          <code>Student ID</code>, <code>Student Name</code>, <code>Course</code>, <code>Block</code>, <code>Section Code</code>, <code>Subject</code>, <code>Parent Name</code>, <code>Parent Email</code>
+        </small>
+      </div>
+
+      <!-- Filters (Dynamically populated from data) -->
+      <div class="grid-4" style="margin-bottom: 1.25rem;">
+        <div>
+          <label>Filter Course</label>
+          <select id="filterCourse" onchange="renderStudents()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+        <div>
+          <label>Filter Block</label>
+          <select id="filterBlock" onchange="renderStudents()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+        <div>
+          <label>Filter Section Code</label>
+          <select id="filterSecCode" onchange="renderStudents()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+        <div>
+          <label>Search Student</label>
+          <input type="text" id="searchBox" placeholder="Type name or ID..." oninput="renderStudents()">
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Course & Block</th>
+              <th>Sec Code & Subject</th>
+              <th>Parent / Guardian</th>
+              <th>Parent Personal Email</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Student Modal -->
+  <div class="modal-backdrop" id="addStudentModal">
+    <div class="modal-box">
+      <h3 style="color: var(--cu-maroon); margin-bottom: 1rem;">Register Student</h3>
+      <form onsubmit="saveSingleStudent(event)">
+        <div class="form-group">
+          <label>Student ID</label>
+          <input type="text" id="mId" placeholder="[student'sID]@g.cu.edu.ph" required>
+        </div>
+        <div class="form-group">
+          <label>Student Full Name</label>
+          <input type="text" id="mName" placeholder="Lastname, Firstname" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Course</label>
+            <input type="text" id="mCourse" placeholder="e.g. BSIT 1" required>
+          </div>
+          <div class="form-group">
+            <label>Block</label>
+            <input type="text" id="mBlock" placeholder="e.g. Block B" required>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Section Code</label>
+            <input type="text" id="mSecCode" placeholder="e.g. IT14" required>
+          </div>
+          <div class="form-group">
+            <label>Subject Description</label>
+            <input type="text" id="mSubject" placeholder="e.g. IT 103 (IT Project 1)" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Parent / Guardian Full Name</label>
+          <input type="text" id="mParent" placeholder="Guardian Name" required>
+        </div>
+        <div class="form-group">
+          <label>Parent Personal Email</label>
+          <input type="email" id="mParentEmail" placeholder="" required>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+  </footer>
+
+  <script>
+    function getStoredStudents() {
+      const stored = localStorage.getItem("cu_students");
+      if (!stored) return [];
+      try {
+        const list = JSON.parse(stored);
+        return list.map(st => ({
+          id: st.id || "",
+          name: st.name || "",
+          course: st.course || "",
+          block: st.block || "",
+          secCode: st.secCode || "",
+          subject: st.subject || "",
+          parent: st.parent || "Parent / Guardian",
+          parentEmail: (st.parentEmail && st.parentEmail !== "undefined") ? st.parentEmail : ""
+        }));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function setStoredStudents(data) {
+      localStorage.setItem("cu_students", JSON.stringify(data));
+      populateFilterDropdowns();
+    }
+
+    function populateFilterDropdowns() {
+      const list = getStoredStudents();
+      const courseSelect = document.getElementById("filterCourse");
+      const blockSelect = document.getElementById("filterBlock");
+      const secSelect = document.getElementById("filterSecCode");
+
+      if (list.length === 0) {
+        courseSelect.innerHTML = `<option value="">-- No Data Available --</option>`;
+        blockSelect.innerHTML = `<option value="">-- No Data Available --</option>`;
+        secSelect.innerHTML = `<option value="">-- No Data Available --</option>`;
+        return;
+      }
+
+      const courses = [...new Set(list.map(s => s.course).filter(Boolean))].sort();
+      const blocks = [...new Set(list.map(s => s.block).filter(Boolean))].sort();
+      const secCodes = [...new Set(list.map(s => s.secCode).filter(Boolean))].sort();
+
+      const prevCourse = courseSelect.value;
+      const prevBlock = blockSelect.value;
+      const prevSec = secSelect.value;
+
+      courseSelect.innerHTML = courses.map(c => `<option value="${c}">${c}</option>`).join("");
+      blockSelect.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join("");
+      secSelect.innerHTML = `<option value="ALL">All Sections</option>` + secCodes.map(s => `<option value="${s}">${s}</option>`).join("");
+
+      if (courses.includes(prevCourse)) courseSelect.value = prevCourse;
+      if (blocks.includes(prevBlock)) blockSelect.value = prevBlock;
+      if (secCodes.includes(prevSec) || prevSec === "ALL") secSelect.value = prevSec;
+    }
+
+    function renderStudents() {
+      const list = getStoredStudents();
+      const tbody = document.getElementById("studentTableBody");
+      tbody.innerHTML = "";
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Database is empty. Upload an .xlsx file or click '+ Add New Student'.</td></tr>`;
+        return;
+      }
+
+      const course = document.getElementById("filterCourse").value;
+      const block = document.getElementById("filterBlock").value;
+      const secCode = document.getElementById("filterSecCode").value;
+      const search = document.getElementById("searchBox").value.toLowerCase();
+
+      const filtered = list.filter(s => {
+        const matchesCourse = !course || s.course === course;
+        const matchesBlock = !block || s.block === block;
+        const matchesSec = !secCode || secCode === "ALL" || s.secCode === secCode;
+        const matchesSearch = s.name.toLowerCase().includes(search) || s.id.includes(search);
+        return matchesCourse && matchesBlock && matchesSec && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No matching student records found.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(st => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${st.id}</strong></td>
+          <td>${st.name}</td>
+          <td>${st.course} - ${st.block}</td>
+          <td><code>${st.secCode || '-'}</code> ${st.subject ? '(' + st.subject + ')' : ''}</td>
+          <td>${st.parent}</td>
+          <td><strong style="color: var(--cu-maroon);">${st.parentEmail}</strong></td>
+          <td><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="deleteStudent('${st.id}')">Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function saveSingleStudent(e) {
+      e.preventDefault();
+      const rawId = document.getElementById("mId").value.trim().replace("@g.cu.edu.ph", "");
+      const emailInput = document.getElementById("mParentEmail").value.trim();
+
+      const newStudent = {
+        id: rawId,
+        name: document.getElementById("mName").value.trim(),
+        course: document.getElementById("mCourse").value.trim(),
+        block: document.getElementById("mBlock").value.trim(),
+        secCode: document.getElementById("mSecCode").value.trim(),
+        subject: document.getElementById("mSubject").value.trim(),
+        parent: document.getElementById("mParent").value.trim() || "Parent / Guardian",
+        parentEmail: emailInput || ""
+      };
+
+      const students = getStoredStudents();
+      students.push(newStudent);
+      setStoredStudents(students);
+
+      hideModal();
+      document.querySelector("#addStudentModal form").reset();
+      renderStudents();
+      alert(`Student ${newStudent.name} registered successfully!`);
+    }
+
+    function deleteStudent(id) {
+      if (confirm(`Remove student ${id}?`)) {
+        const remaining = getStoredStudents().filter(s => s.id !== id);
+        setStoredStudents(remaining);
+        renderStudents();
+      }
+    }
+
+    function handleExcelUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (!rows || rows.length === 0) {
+            alert("Uploaded spreadsheet is empty.");
+            return;
+          }
+
+          const existing = getStoredStudents();
+          let count = 0;
+
+          rows.forEach(r => {
+            const stuId = String(r["Student ID"] || r["ID"] || r["id"] || "").trim().replace("@g.cu.edu.ph", "");
+            const stuName = String(r["Student Name"] || r["Name"] || r["name"] || "").trim();
+            const course = String(r["Course"] || r["course"] || "").trim();
+            const block = String(r["Block"] || r["block"] || "").trim();
+            const secCode = String(r["Section Code"] || r["Sec Code"] || r["Section"] || r["secCode"] || "").trim();
+            const subject = String(r["Subject"] || r["Subject Description"] || r["Description"] || "").trim();
+            const parent = String(r["Parent Name"] || r["Parent"] || r["parent"] || "Parent / Guardian").trim();
+            
+            let emailVal = r["Parent Personal Email"] || r["Parent Email"] || r["Email"] || r["email"] || r["personalEmail"] || "";
+
+            if (stuId && stuName) {
+              existing.push({ id: stuId, name: stuName, course, block, secCode, subject, parent, parentEmail: emailVal });
+              count++;
+            }
+          });
+
+          setStoredStudents(existing);
+          renderStudents();
+          alert(`Successfully imported ${count} students with sections & subjects!`);
+        } catch (err) {
+          alert("Error processing Excel file. Make sure it has valid columns.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function showModal() { document.getElementById("addStudentModal").style.display = "flex"; }
+    function hideModal() { document.getElementById("addStudentModal").style.display = "none"; }
+
+    populateFilterDropdowns();
+    renderStudents();
+  </script>
+</body>
+</html>

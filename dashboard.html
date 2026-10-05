@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard - CU Attends</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stat-card {
+      border-radius: 8px;
+      padding: 1.25rem;
+      color: #FFFFFF;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-top: 0.35rem;
+    }
+    /* Basic slideshow */
+    .slide-box {
+      position: relative;
+      height: 250px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+      background: #111827;
+    }
+    .slide-item {
+      display: none;
+      height: 100%;
+      position: relative;
+    }
+    .slide-item.active-slide { 
+      display: block; 
+    }
+    .slide-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .slide-overlay {
+      position: absolute;
+      bottom: 0; 
+      left: 0; 
+      right: 0;
+      background: rgba(99, 12, 14, 0.88);
+      color: #FFFFFF;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+    .slide-btn {
+      position: absolute;
+      top: 40%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.55);
+      color: #FFFFFF;
+      border: none;
+      padding: 0.5rem 0.85rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 10;
+      transition: background 0.2s ease;
+    }
+    .slide-btn:hover {
+      background: var(--cu-maroon);
+    }
+    .slide-btn-prev { left: 10px; }
+    .slide-btn-next { right: 10px; }
+
+    /* Image Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .gallery-grid img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background-color: #e5e7eb;
+    }
+
+    /* Video Container */
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      margin-top: 1rem;
+      background: #000000;
+    }
+    .video-container video,
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    @media (max-width: 800px) {
+      .gallery-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header-top">
+    <a href="dashboard.html" class="brand-wrapper">
+      <img src="logo.png" alt="CU Logo" class="brand-logo-img">
+      <span class="brand-title">CU Attends</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="attendance.html">Attendance</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="students.html">Students</a></li>
+      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+    </ul>
+  </header>
+
+  <main class="container">
+    <h2 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Faculty Attendance Dashboard</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Live Program Attendance & Truancy Overview</p>
+
+    <!-- Dynamic Metrics Calculated from localStorage -->
+    <div class="grid-4" style="margin-bottom: 1.5rem;">
+      <div class="stat-card" style="background: var(--cu-maroon);">
+        <div>Total Enrolled</div>
+        <div class="stat-number" id="dashTotalEnrolled">0</div>
+      </div>
+      <div class="stat-card" style="background: var(--cu-green);">
+        <div>Present Today</div>
+        <div class="stat-number" id="dashPresent">0</div>
+      </div>
+      <div class="stat-card" style="background: var(--cu-gold-hover);">
+        <div>Tardy / Late</div>
+        <div class="stat-number" id="dashLate">0</div>
+      </div>
+      <div class="stat-card" style="background: var(--danger);">
+        <div>Unexcused Absent</div>
+        <div class="stat-number" id="dashAbsent">0</div>
+      </div>
+    </div>
+
+    <!-- Truancy Alert Section -->
+    <div class="card">
+      <h3 style="color: var(--danger); margin-bottom: 0.5rem;">Truancy Risk Intervention</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Students with recorded unexcused absences requiring follow-up.</p>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Course & Block</th>
+              <th>Parent Personal Email</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="truancyTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No active truancy alerts recorded yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Video Showcase Section -->
+    <div class="card">
+      <h3 style="color: var(--cu-maroon);">Campus Orientation & Video Briefing</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">Official university orientation video and system usage guidelines.</p>
+      <div class="video-container">
+        <video controls poster="">
+          <source src="orientation.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+
+    <!-- Campus Bulletins Slideshow -->
+    <div class="card">
+      <h3 style="color: var(--cu-maroon);">Campus Bulletins</h3>
+      
+      <div class="slide-box">
+        <button type="button" class="slide-btn slide-btn-prev" onclick="prevSlide()">❮</button>
+        <button type="button" class="slide-btn slide-btn-next" onclick="nextSlide()">❯</button>
+
+        <div class="slide-item active-slide">
+          <img src="" alt="Auditorium">
+          <div class="slide-overlay"><strong>College of Computer Studies:</strong> Department project evaluation schedules are announced on the portal.</div>
+        </div>
+        <div class="slide-item">
+          <img src="" alt="Students in study">
+          <div class="slide-overlay"><strong>Attendance Policy:</strong> 80% physical attendance is required for final examination clearance.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campus Image Gallery -->
+    <div class="card">
+      <h3 style="color: var(--cu-maroon);">Campus Image Gallery</h3>
+      <div class="gallery-grid">
+        <img src="" alt="Campus Grounds">
+        <img src="" alt="Academic Complex">
+        <img src="" alt="Computer Lab">
+        <img src="" alt="Student Discussions">
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+  </footer>
+
+  <script>
+    function loadDashboardData() {
+      const students = JSON.parse(localStorage.getItem("cu_students") || "[]");
+      const summary = JSON.parse(localStorage.getItem("cu_last_summary") || '{"present":0,"late":0,"absent":0}');
+      const history = JSON.parse(localStorage.getItem("cu_attendance_history") || "[]");
+
+      document.getElementById("dashTotalEnrolled").innerText = students.length;
+      document.getElementById("dashPresent").innerText = summary.present;
+      document.getElementById("dashLate").innerText = summary.late;
+      document.getElementById("dashAbsent").innerText = summary.absent;
+
+      const absents = history.filter(h => h.status === "absent");
+      const truancyTbody = document.getElementById("truancyTableBody");
+
+      if (absents.length > 0) {
+        truancyTbody.innerHTML = "";
+        absents.forEach(st => {
+          const emailDisplay = (st.parentEmail && st.parentEmail !== "undefined" && st.parentEmail.trim() !== "") 
+            ? st.parentEmail 
+            : "";
+            
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><strong>${st.id}</strong></td>
+            <td>${st.name}</td>
+            <td>${st.course} (${st.block})</td>
+            <td><code>${emailDisplay}</code></td>
+            <td><button type="button" class="btn btn-gold" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="alert('Notification alert resent to parent personal email!')">Resend Alert</button></td>
+          `;
+          truancyTbody.appendChild(tr);
+        });
+      }
+    }
+
+    let currentIndex = 0;
+    const slides = document.querySelectorAll(".slide-item");
+
+    function showSlide(index) {
+      if (!slides || slides.length === 0) return;
+      slides.forEach(s => s.classList.remove("active-slide"));
+      if (index >= slides.length) currentIndex = 0;
+      else if (index < 0) currentIndex = slides.length - 1;
+      else currentIndex = index;
+      slides[currentIndex].classList.add("active-slide");
+    }
+
+    function nextSlide() { 
+      showSlide(currentIndex + 1); 
+    }
+    
+    function prevSlide() { 
+      showSlide(currentIndex - 1); 
+    }
+
+    loadDashboardData();
+  </script>
+</body>
+</html>

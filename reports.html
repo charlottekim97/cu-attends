@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - CU Attends</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header-top">
+    <a href="dashboard.html" class="brand-wrapper">
+      <img src="logo.png" alt="CU Logo" class="brand-logo-img">
+      <span class="brand-title">CU Attends</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="attendance.html">Attendance</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="reports.html" class="active">Reports</a></li>
+      <li><a href="students.html">Students</a></li>
+      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+    </ul>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="color: var(--cu-maroon);">Historical Attendance Logs</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Course logs and audit records sorted by date.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" onclick="exportLogsCSV()">📁 Export CSV</button>
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Print / PDF</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Course & Block</th>
+              <th>Status</th>
+              <th>Alert Dispatched (Parent Email)</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No attendance records submitted yet. Take attendance to see logs here.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+  </footer>
+
+  <script>
+    function loadReports() {
+      const records = JSON.parse(localStorage.getItem("cu_attendance_history") || "[]");
+      const tbody = document.getElementById("reportsTableBody");
+
+      if (records.length === 0) return;
+
+      tbody.innerHTML = "";
+      records.forEach(r => {
+        const badgeClass = r.status === 'present' ? 'badge-success' : (r.status === 'late' ? 'badge-warning' : 'badge-danger');
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.date}</td>
+          <td><strong>${r.id}</strong></td>
+          <td>${r.name}</td>
+          <td>${r.course} (${r.block})</td>
+          <td><span class="badge ${badgeClass}">${r.status.toUpperCase()}</span></td>
+          <td><code>${r.parentEmail || ''}</code></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportLogsCSV() {
+      const records = JSON.parse(localStorage.getItem("cu_attendance_history") || "[]");
+      if (records.length === 0) {
+        alert("No records to export.");
+        return;
+      }
+      let csv = "Date,Student ID,Student Name,Course,Block,Status,Parent Email\n";
+      records.forEach(r => {
+        csv += `"${r.date}","${r.id}","${r.name}","${r.course}","${r.block}","${r.status}","${r.parentEmail || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Attendance_Report.csv";
+      a.click();
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

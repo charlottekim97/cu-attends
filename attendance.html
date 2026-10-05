@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Marking - CU Attends</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .vertical-status-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+    }
+    .vertical-status-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      margin-bottom: 0;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header-top">
+    <a href="dashboard.html" class="brand-wrapper">
+      <img src="logo.png" alt="CU Logo" class="brand-logo-img">
+      <span class="brand-title">CU Attends</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="attendance.html" class="active">Attendance</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="students.html">Students</a></li>
+      <li><a href="index.html" class="btn-signout">Sign Out</a></li>
+    </ul>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+        <div>
+          <h2 style="color: var(--cu-maroon);">Daily Class Attendance Sheet</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Submissions automatically dispatch notifications to parents' personal emails.</p>
+        </div>
+        <button type="button" class="btn btn-gold" onclick="markAll('present')">✓ Mark All Present</button>
+      </div>
+
+      <!-- Dropdowns empty by default until students exist -->
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div>
+          <label for="attDate">Date</label>
+          <input type="date" id="attDate">
+        </div>
+        <div>
+          <label for="courseSelect">Course</label>
+          <select id="courseSelect" onchange="renderStudentRoster()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+        <div>
+          <label for="blockSelect">Block</label>
+          <select id="blockSelect" onchange="renderStudentRoster()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+        <div>
+          <label for="secCodeSelect">Section Code & Subject</label>
+          <select id="secCodeSelect" onchange="renderStudentRoster()">
+            <option value="">-- No Data Available --</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 140px;">Student ID</th>
+              <th>Student Name</th>
+              <th>Parent Personal Email</th>
+              <th style="width: 130px;">Attendance Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button type="button" class="btn btn-primary" onclick="submitAttendance()">
+          Submit Attendance & Send Alerts
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+  </footer>
+
+  <script>
+    document.getElementById("attDate").value = new Date().toISOString().split("T")[0];
+
+    function getStudents() {
+      const stored = localStorage.getItem("cu_students");
+      if (!stored) return [];
+      try {
+        const list = JSON.parse(stored);
+        return list.map(st => ({
+          id: st.id || "",
+          name: st.name || "",
+          course: st.course || "",
+          block: st.block || "",
+          secCode: st.secCode || "",
+          subject: st.subject || "",
+          parent: st.parent || "Parent / Guardian",
+          parentEmail: (st.parentEmail && st.parentEmail !== "undefined") ? st.parentEmail : ""
+        }));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function populateAttendanceDropdowns() {
+      const list = getStudents();
+      const courseSel = document.getElementById("courseSelect");
+      const blockSel = document.getElementById("blockSelect");
+      const secSel = document.getElementById("secCodeSelect");
+
+      if (list.length === 0) {
+        courseSel.innerHTML = `<option value="">-- No Data Available --</option>`;
+        blockSel.innerHTML = `<option value="">-- No Data Available --</option>`;
+        secSel.innerHTML = `<option value="">-- No Data Available --</option>`;
+        return;
+      }
+
+      const courses = [...new Set(list.map(s => s.course).filter(Boolean))].sort();
+      const blocks = [...new Set(list.map(s => s.block).filter(Boolean))].sort();
+      
+      const secMap = {};
+      list.forEach(s => {
+        if (s.secCode) {
+          secMap[s.secCode] = s.subject ? `${s.secCode} - ${s.subject}` : s.secCode;
+        }
+      });
+
+      courseSel.innerHTML = courses.map(c => `<option value="${c}">${c}</option>`).join("");
+      blockSel.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join("");
+      
+      const secKeys = Object.keys(secMap).sort();
+      if (secKeys.length > 0) {
+        secSel.innerHTML = secKeys.map(k => `<option value="${k}">${secMap[k]}</option>`).join("");
+      } else {
+        secSel.innerHTML = `<option value="">No Section Specified</option>`;
+      }
+    }
+
+    function renderStudentRoster() {
+      const list = getStudents();
+      const tbody = document.getElementById("attendanceTableBody");
+      tbody.innerHTML = "";
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No students enrolled. Upload an .xlsx file in the Students tab first.</td></tr>`;
+        return;
+      }
+
+      const course = document.getElementById("courseSelect").value;
+      const block = document.getElementById("blockSelect").value;
+      const secCode = document.getElementById("secCodeSelect").value;
+
+      const filtered = list.filter(s => {
+        const matchCourse = !course || s.course === course;
+        const matchBlock = !block || s.block === block;
+        const matchSec = !secCode || !s.secCode || s.secCode === secCode;
+        return matchCourse && matchBlock && matchSec;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No students found for this section.</td></tr>`;
+        return;
+      }
+
+      filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+      filtered.forEach((st) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${st.id}</strong></td>
+          <td>${st.name}</td>
+          <td><code>${st.parentEmail}</code></td>
+          <td>
+            <div class="vertical-status-group">
+              <label><input type="radio" name="att_${st.id}" value="present" checked> Present</label>
+              <label><input type="radio" name="att_${st.id}" value="late"> Late</label>
+              <label><input type="radio" name="att_${st.id}" value="absent"> Absent</label>
+            </div>
+          </td>
+          <td>
+            <select id="rem_${st.id}">
+              <option>Normal / On Time</option>
+              <option>Late Arrival (&lt; 15 mins)</option>
+              <option>Excused (Medical Slip)</option>
+              <option>Unexcused / Absent</option>
+            </select>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function markAll(val) {
+      document.querySelectorAll(`input[type="radio"][value="${val}"]`).forEach(r => r.checked = true);
+    }
+
+    function submitAttendance() {
+      const course = document.getElementById("courseSelect").value;
+      const block = document.getElementById("blockSelect").value;
+      const secCode = document.getElementById("secCodeSelect").value;
+      const date = document.getElementById("attDate").value;
+      const list = getStudents().filter(s => (!course || s.course === course) && (!block || s.block === block));
+
+      if (list.length === 0) {
+        alert("No students to record.");
+        return;
+      }
+
+      let summary = { present: 0, late: 0, absent: 0 };
+      let records = JSON.parse(localStorage.getItem("cu_attendance_history") || "[]");
+
+      list.forEach(st => {
+        const selected = document.querySelector(`input[name="att_${st.id}"]:checked`);
+        const status = selected ? selected.value : "present";
+        summary[status]++;
+
+        records.push({
+          date: date,
+          id: st.id,
+          name: st.name,
+          course: st.course,
+          block: st.block,
+          secCode: st.secCode || secCode,
+          status: status,
+          parentEmail: st.parentEmail
+        });
+      });
+
+      localStorage.setItem("cu_attendance_history", JSON.stringify(records));
+      localStorage.setItem("cu_last_summary", JSON.stringify(summary));
+
+      alert(`Attendance for ${course} (${block}) submitted successfully!\nPresent: ${summary.present} | Late: ${summary.late} | Absent: ${summary.absent}\nAutomated alerts dispatched to parents.`);
+    }
+
+    populateAttendanceDropdowns();
+    renderStudentRoster();
+  </script>
+</body>
+</html>
