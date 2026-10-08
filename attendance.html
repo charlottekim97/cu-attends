@@ -27,18 +27,6 @@
       margin: 0;
       cursor: pointer;
     }
-    .faculty-nav-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(252, 211, 77, 0.5);
-      border-radius: 20px;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.85rem;
-      color: #FDE68A;
-      font-weight: 600;
-    }
   </style>
 </head>
 <body>
@@ -48,12 +36,17 @@
       <img src="logo.png" alt="CU Logo" class="brand-logo-img">
       <span class="brand-title">CU Attends</span>
     </a>
-    <ul class="nav-links">
+    <button class="hamburger-btn" id="navToggleBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="mainNavLinks">
       <li><a href="attendance.html" class="active">Attendance</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
@@ -65,7 +58,7 @@
           <h2 style="color: var(--cu-maroon);">Daily Class Attendance Sheet</h2>
           <p style="color: var(--text-muted); font-size: 0.9rem;">Submissions automatically dispatch notifications to parents' personal emails.</p>
         </div>
-        <button type="button" class="btn btn-gold" onclick="markAll('present')">✓ Mark All Present</button>
+        <button type="button" class="btn btn-gold" onclick="markAll('present')">Mark All Present</button>
       </div>
 
       <div class="grid-4" style="margin-bottom: 1.5rem;">
@@ -121,6 +114,10 @@
   </footer>
 
   <script>
+    document.getElementById("navToggleBtn").addEventListener("click", function() {
+      document.getElementById("mainNavLinks").classList.toggle("nav-open");
+    });
+
     document.getElementById("attDate").value = new Date().toISOString().split("T")[0];
 
     function loadTeacherNav() {
@@ -130,7 +127,11 @@
           const profile = JSON.parse(stored);
           let formattedName = profile.name || "Instructor";
           formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
-          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
+          if (formattedName.includes(",")) {
+            const parts = formattedName.replace(/^Instructor\s*/i, "").split(",");
+            formattedName = `Instructor ${parts[1].trim()} ${parts[0].trim()}`;
+          }
+          document.getElementById("navTeacherPill").innerText = formattedName;
         } catch (e) {}
       }
     }
@@ -175,7 +176,7 @@
       const secMap = {};
       list.forEach(s => {
         if (s.secCode) {
-          secMap[s.secCode] = s.subject ? `${s.secCode} -${s.subject}` : s.secCode;
+          secMap[s.secCode] = s.subject ? `${s.secCode} - ${s.subject}` : s.secCode;
         }
       });
 
@@ -283,7 +284,7 @@
       localStorage.setItem("cu_attendance_history", JSON.stringify(records));
       localStorage.setItem("cu_last_summary", JSON.stringify(summary));
 
-      alert(`Attendance for ${course} (${block}) submitted successfully!\nPresent:${summary.present} | Late: ${summary.late} \vert{} Absent:${summary.absent}\nAutomated alerts dispatched to parents.`);
+      alert(`Attendance for ${course} (${block}) submitted successfully!\nPresent: ${summary.present} | Late: ${summary.late} | Absent: ${summary.absent}\nAutomated alerts dispatched to parents.`);
     }
 
     populateAttendanceDropdowns();

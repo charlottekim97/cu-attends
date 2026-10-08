@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Dashboard - CU Attends</title>
+  <title>Faculty Dashboard - CU Attends</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .teacher-welcome-card {
@@ -39,18 +39,6 @@
       justify-content: center;
       border: 2px solid var(--cu-gold);
     }
-    .faculty-nav-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(252, 211, 77, 0.5);
-      border-radius: 20px;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.85rem;
-      color: #FDE68A;
-      font-weight: 600;
-    }
     .stat-card {
       border-radius: 8px;
       padding: 1.25rem;
@@ -65,7 +53,7 @@
     /* Slideshow */
     .slide-box {
       position: relative;
-      height: 250px;
+      height: 380px;
       border-radius: 8px;
       overflow: hidden;
       margin-top: 1rem;
@@ -89,30 +77,35 @@
       bottom: 0; 
       left: 0; 
       right: 0;
-      background: rgba(99, 12, 14, 0.88);
+      background: linear-gradient(to top, rgba(99, 12, 14, 0.95), rgba(99, 12, 14, 0.75));
       color: #FFFFFF;
-      padding: 0.75rem 1.25rem;
-      font-size: 0.9rem;
+      padding: 1rem 1.25rem;
+      font-size: 0.92rem;
+      line-height: 1.45;
     }
     .slide-btn {
       position: absolute;
-      top: 40%;
+      top: 50%;
       transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.65);
       color: #FFFFFF;
       border: none;
-      padding: 0.5rem 0.85rem;
-      font-size: 1.1rem;
+      padding: 0.75rem 1rem;
+      font-size: 1.3rem;
       cursor: pointer;
       border-radius: 4px;
       z-index: 10;
-      transition: background 0.2s ease;
+      transition: background 0.2s ease, transform 0.1s ease;
+      user-select: none;
     }
     .slide-btn:hover {
       background: var(--cu-maroon);
     }
-    .slide-btn-prev { left: 10px; }
-    .slide-btn-next { right: 10px; }
+    .slide-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .slide-btn-prev { left: 12px; }
+    .slide-btn-next { right: 12px; }
 
     /* Image Gallery Grid */
     .gallery-grid {
@@ -121,13 +114,28 @@
       gap: 1rem;
       margin-top: 1rem;
     }
-    .gallery-grid img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 6px;
+    .gallery-card {
+      background: #FFFFFF;
       border: 1px solid var(--border-color);
-      background-color: #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .gallery-card img {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      display: block;
+      background-color: #f1f5f9;
+    }
+    .gallery-card-desc {
+      padding: 0.85rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      flex-grow: 1;
+      line-height: 1.45;
     }
 
     /* Video Container */
@@ -140,8 +148,7 @@
       margin-top: 1rem;
       background: #000000;
     }
-    .video-container video,
-    .video-container iframe {
+    .video-container video {
       position: absolute;
       top: 0;
       left: 0;
@@ -150,10 +157,12 @@
       border: none;
     }
 
-    @media (max-width: 800px) {
-      .gallery-grid { 
-        grid-template-columns: repeat(2, 1fr); 
-      }
+    @media (max-width: 900px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .slide-box { height: 280px; }
+    }
+    @media (max-width: 550px) {
+      .gallery-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -164,18 +173,22 @@
       <img src="logo.png" alt="CU Logo" class="brand-logo-img">
       <span class="brand-title">CU Attends</span>
     </a>
-    <ul class="nav-links">
+    <button class="hamburger-btn" id="navToggleBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="mainNavLinks">
       <li><a href="attendance.html">Attendance</a></li>
       <li><a href="dashboard.html" class="active">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
 
   <main class="container">
-    <!-- Teacher Acknowledgment Card -->
     <div class="teacher-welcome-card">
       <div class="teacher-welcome-left">
         <div class="teacher-avatar" id="teacherInitials">CU</div>
@@ -195,7 +208,7 @@
     <h2 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Faculty Attendance Dashboard</h2>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Live Program Attendance & Truancy Overview</p>
 
-    <!-- Dynamic Metrics Calculated from localStorage -->
+    <!-- Dynamic Metrics -->
     <div class="grid-4" style="margin-bottom: 1.5rem;">
       <div class="stat-card" style="background: var(--cu-maroon);">
         <div>Total Enrolled</div>
@@ -240,69 +253,128 @@
       </div>
     </div>
 
-    <!-- Video Showcase Section -->
+    <!-- Campus Bulletins Slideshow (Manual Arrow Control Only) -->
     <div class="card">
-      <h3 style="color: var(--cu-maroon);">Campus Orientation & Video Briefing</h3>
-      <p style="color: var(--text-muted); font-size: 0.88rem;">Official university orientation video and system usage guidelines.</p>
-      <div class="video-container">
-        <video controls poster="">
-          <source src="orientation.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    </div>
-
-    <!-- Campus Bulletins Slideshow -->
-    <div class="card">
-      <h3 style="color: var(--cu-maroon);">Campus Bulletins</h3>
+      <h3 style="color: var(--cu-maroon);">Campus Bulletins & Landmarks</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">Use the left and right controls to browse through campus landmarks and updates.</p>
       
       <div class="slide-box">
-        <button type="button" class="slide-btn slide-btn-prev" onclick="prevSlide()">❮</button>
-        <button type="button" class="slide-btn slide-btn-next" onclick="nextSlide()">❯</button>
+        <button type="button" class="slide-btn slide-btn-prev" onclick="prevSlide()" aria-label="Previous Slide">&lt;</button>
+        <button type="button" class="slide-btn slide-btn-next" onclick="nextSlide()" aria-label="Next Slide">&gt;</button>
 
         <div class="slide-item active-slide">
-          <img src="" alt="Auditorium">
-          <div class="slide-overlay"><strong>College of Computer Studies:</strong> Department project evaluation schedules are announced on the portal.</div>
+          <img src="slide1.jpg" alt="CU Gate">
+          <div class="slide-overlay">
+            <strong>Capitol University Gate</strong><br>
+            The primary gateway and ceremonial portal of Capitol University. All enrolled students and faculty must scan their verified identification upon entering to synchronize security and attendance checkpoints.
+          </div>
         </div>
+
         <div class="slide-item">
-          <img src="" alt="Students in study">
-          <div class="slide-overlay"><strong>Attendance Policy:</strong> 80% physical attendance is required for final examination clearance.</div>
+          <img src="slide2.jpg" alt="Campus Courts">
+          <div class="slide-overlay">
+            <strong>Campus Courts</strong><br>
+            Multi-purpose outdoor athletic courts dedicated to physical education lectures, collegiate tournaments, and student athletic team practices under official faculty oversight.
+          </div>
+        </div>
+
+        <div class="slide-item">
+          <img src="slide3.jpg" alt="Friendship Park">
+          <div class="slide-overlay">
+            <strong>Friendship Park</strong><br>
+            The green social heart of the campus. A shaded outdoor communal sanctuary where students assemble between lectures for peer study, collaborative discussions, and university community events.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Campus Image Gallery -->
     <div class="card">
-      <h3 style="color: var(--cu-maroon);">Campus Image Gallery</h3>
+      <h3 style="color: var(--cu-maroon);">Campus Academic & Technology Facilities</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">Key learning spaces, computing environments, and student centers across the campus.</p>
       <div class="gallery-grid">
-        <img src="" alt="Campus Grounds">
-        <img src="" alt="Academic Complex">
-        <img src="" alt="Computer Lab">
-        <img src="" alt="Student Discussions">
+        <div class="gallery-card">
+          <img src="gallery1.jpg" alt="Computer Laboratory A">
+          <div class="gallery-card-desc">
+            <strong>Computer Laboratory A:</strong> State-of-the-art computing facility configured with high-performance desktop terminals, network infrastructure, and specialized software development environments for hands-on technical coursework.
+          </div>
+        </div>
+        <div class="gallery-card">
+          <img src="gallery2.jpg" alt="Campus Academic Buildings">
+          <div class="gallery-card-desc">
+            <strong>Campus Academic Buildings:</strong> Expansive multi-story academic complex housing smart lecture halls, collegiate dean offices, and faculty consultation rooms built to support diverse degree programs.
+          </div>
+        </div>
+        <div class="gallery-card">
+          <img src="gallery3.jpg" alt="Cyber Park">
+          <div class="gallery-card-desc">
+            <strong>Cyber Park:</strong> An open-air campus haven furnished with stone picnic kiosks and surrounding greenery, offering an ergonomic outdoor setting equipped for research, reading, and team consultations.
+          </div>
+        </div>
+        <div class="gallery-card">
+          <img src="gallery4.jpg" alt="Students Working Inside CL-A">
+          <div class="gallery-card-desc">
+            <strong>Students Working Inside CL-A:</strong> Active computer laboratory session where students collaborate closely on code debugging, systems architecture projects, and real-time laboratory milestone assessments.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Showcase Section -->
+    <div class="card">
+      <h3 style="color: var(--cu-maroon);">Campus Orientation & Video Briefing</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">Official university orientation video and system usage guidelines.</p>
+      <div class="video-container">
+        <video controls poster="slide1.jpg">
+          <source src="orientation.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
       </div>
     </div>
   </main>
 
   <footer>
-    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.[cite: 6]
   </footer>
 
   <script>
+    // Responsive Hamburger Toggle
+    document.getElementById("navToggleBtn").addEventListener("click", function() {
+      document.getElementById("mainNavLinks").classList.toggle("nav-open");
+    });
+
+    function formatInstructorName(rawName) {
+      if (!rawName) return "Instructor";
+      
+      let cleaned = rawName.replace(/^Prof\.\s*/i, "").replace(/^Instructor\s*/i, "").trim();
+
+      if (cleaned.includes(",")) {
+        const parts = cleaned.split(",").map(p => p.trim());
+        return `Instructor ${parts[1]}${parts[0]}`;
+      } else if (cleaned.includes(".")) {
+        const parts = cleaned.split(".").map(p => p.trim());
+        const cap = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        return `Instructor ${cap(parts[1])}${cap(parts[0])}`;
+      }
+
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      if (words.length >= 2) {
+        return `Instructor ${words.join(" ")}`;
+      }
+      return `Instructor ${cleaned}`;
+    }
+
     function loadFacultyProfile() {
       const stored = localStorage.getItem("session_teacher_profile");
       if (stored) {
         try {
           const profile = JSON.parse(stored);
-          
-          // Re-normalize name to ensure "Instructor" title and clean spacing
-          let formattedName = profile.name || "Instructor";
-          formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
+          const formattedName = formatInstructorName(profile.name);
           
           document.getElementById("teacherProfileName").innerText = formattedName;
           document.getElementById("teacherProfileEmail").innerText = profile.email || "faculty@g.cu.edu.ph";
-          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
+          document.getElementById("navTeacherPill").innerText = formattedName;
 
-          // Extract initials from first and last name after removing title
           const cleanName = formattedName.replace(/^Instructor\s*/i, "").trim();
           const nameWords = cleanName.split(/\s+/).filter(Boolean);
           let initials = "CU";
@@ -312,9 +384,7 @@
             initials = nameWords[0].substring(0, 2);
           }
           document.getElementById("teacherInitials").innerText = initials.toUpperCase();
-        } catch (e) {
-          // Fallback to default
-        }
+        } catch (e) {}
       }
     }
 
@@ -346,7 +416,7 @@
             <td>${st.name}</td>
             <td>${st.course} (${st.block})</td>
             <td><code>${emailDisplay}</code></td>
-            <td><button type="button" class="btn btn-gold" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="alert('Notification alert resent to parent personal email!')">Resend Alert</button></td>
+            <td><button type="button" class="btn btn-gold" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="alert('Notification alert resent to parent personal email.')">Resend Alert</button></td>
           `;
           truancyTbody.appendChild(tr);
         });

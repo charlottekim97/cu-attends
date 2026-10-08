@@ -8,7 +8,7 @@
   <style>
     .auth-split-wrapper {
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
+      grid-template-columns: 1.15fr 1fr;
       gap: 2rem;
       align-items: stretch;
       margin-top: 1rem;
@@ -43,6 +43,17 @@
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
     }
+    .live-warning-message {
+      display: none;
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+    .input-invalid {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
+    }
     @media (max-width: 850px) {
       .auth-split-wrapper { grid-template-columns: 1fr; }
     }
@@ -63,27 +74,27 @@
       <!-- Campus Life Gallery -->
       <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <h3 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Capitol University Campus</h3>
+          <h3 style="color: var(--cu-maroon); margin-bottom: 0.25rem;">Capitol University Campus Life</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
             Automated Student Attendance & Parent Notification System.
           </p>
         </div>
         <div class="gallery-column">
           <div class="gallery-img-box">
-            <img src="" alt="CU Grounds">
-            <span class="gallery-tag">University Grounds</span>
+            <img src="gallery1.jpg" alt="Computer Laboratory A">
+            <span class="gallery-tag">Computer Laboratory A</span>
           </div>
           <div class="gallery-img-box">
-            <img src="" alt="Academic Complex">
-            <span class="gallery-tag">Academic Building</span>
+            <img src="gallery2.jpg" alt="Academic Buildings">
+            <span class="gallery-tag">Academic Complex</span>
           </div>
           <div class="gallery-img-box">
-            <img src="" alt="IT Lab">
-            <span class="gallery-tag">IT Lab CL-A</span>
+            <img src="gallery3.jpg" alt="Cyber Park">
+            <span class="gallery-tag">Cyber Park</span>
           </div>
           <div class="gallery-img-box">
-            <img src="" alt="Students">
-            <span class="gallery-tag">Student Activities</span>
+            <img src="gallery4.jpg" alt="CL-A Project Collaboration">
+            <span class="gallery-tag">Collaborative Sessions</span>
           </div>
         </div>
       </div>
@@ -104,10 +115,13 @@
 
           <div class="form-group">
             <label for="userEmail">Account Email</label>
-            <input type="text" id="userEmail" placeholder="[lastname].[firstname]@g.cu.edu.ph" required>
+            <input type="text" id="userEmail" placeholder="[lastname].[firstname]@g.cu.edu.ph" required autocomplete="off">
             <small id="formatHint" style="display:block; color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem;">
               Format: <code>[lastname].[firstname]@g.cu.edu.ph</code>
             </small>
+            <div id="emailWarning" class="live-warning-message">
+              Account email must strictly end with @g.cu.edu.ph
+            </div>
           </div>
 
           <div class="form-group">
@@ -115,7 +129,7 @@
             <input type="password" id="password" placeholder="••••••••" required>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+          <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
         </form>
       </div>
 
@@ -123,13 +137,49 @@
   </main>
 
   <footer>
-    &copy; 2026 Capitol University - CU Attends. All rights reserved.
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.[cite: 3]
   </footer>
 
   <script>
+    const emailInput = document.getElementById("userEmail");
+    const emailWarning = document.getElementById("emailWarning");
+
+    function validateLoginEmailLive() {
+      const val = emailInput.value.trim().toLowerCase();
+      const role = document.getElementById("userRole").value;
+
+      if (!val) {
+        emailWarning.style.display = "none";
+        emailInput.classList.remove("input-invalid");
+        return false;
+      }
+
+      if (!val.endsWith("@g.cu.edu.ph")) {
+        emailWarning.innerText = "Account email must strictly end with @g.cu.edu.ph";
+        emailWarning.style.display = "block";
+        emailInput.classList.add("input-invalid");
+        return false;
+      }
+
+      if (role === "faculty") {
+        const username = val.replace("@g.cu.edu.ph", "");
+        if (!username.includes(".")) {
+          emailWarning.innerText = "Faculty format must be [lastname].[firstname]@g.cu.edu.ph";
+          emailWarning.style.display = "block";
+          emailInput.classList.add("input-invalid");
+          return false;
+        }
+      }
+
+      emailWarning.style.display = "none";
+      emailInput.classList.remove("input-invalid");
+      return true;
+    }
+
+    emailInput.addEventListener("input", validateLoginEmailLive);
+
     function updatePlaceholders() {
       const role = document.getElementById("userRole").value;
-      const emailInput = document.getElementById("userEmail");
       const hint = document.getElementById("formatHint");
 
       if (role === "faculty") {
@@ -139,17 +189,16 @@
         emailInput.placeholder = "[student'sID]@g.cu.edu.ph";
         hint.innerHTML = "Format: <code>[student'sID]@g.cu.edu.ph</code> (Child's Institutional ID)";
       }
+      validateLoginEmailLive();
     }
 
     function handleLogin(e) {
       e.preventDefault();
       const role = document.getElementById("userRole").value;
-      const inputVal = document.getElementById("userEmail").value.trim().toLowerCase();
+      const inputVal = emailInput.value.trim().toLowerCase();
 
-      // Enforce strict @g.cu.edu.ph institutional domain requirement
-      if (!inputVal.endsWith("@g.cu.edu.ph")) {
-        alert("Access Denied: You must use your valid institutional email ending with @g.cu.edu.ph");
-        document.getElementById("userEmail").focus();
+      if (!validateLoginEmailLive()) {
+        emailInput.focus();
         return;
       }
 
@@ -158,7 +207,6 @@
         localStorage.setItem("session_parent_student_id", studentId);
         window.location.href = "parent-dashboard.html";
       } else {
-        // Parse teacher name from [lastname].[firstname]@g.cu.edu.ph
         const usernamePart = inputVal.split("@")[0];
         let teacherDisplayName = "Instructor";
 
@@ -167,8 +215,7 @@
           const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
           const lastName = capitalize(parts[0]);
           const firstName = capitalize(parts[1]);
-          // Formats with clean space: Instructor Firstname Lastname
-          teacherDisplayName = `Instructor ${firstName}${lastName}`;
+          teacherDisplayName = `Instructor ${firstName} ${lastName}`;
         } else {
           const formatted = usernamePart.charAt(0).toUpperCase() + usernamePart.slice(1).toLowerCase();
           teacherDisplayName = `Instructor ${formatted}`;

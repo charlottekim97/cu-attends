@@ -43,17 +43,16 @@
       background: #FFFDF5;
       margin-bottom: 1.25rem;
     }
-    .faculty-nav-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(252, 211, 77, 0.5);
-      border-radius: 20px;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.85rem;
-      color: #FDE68A;
-      font-weight: 600;
+    .live-warning-message {
+      display: none;
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+    .input-invalid {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
     }
   </style>
 </head>
@@ -64,12 +63,17 @@
       <img src="logo.png" alt="CU Logo" class="brand-logo-img">
       <span class="brand-title">CU Attends</span>
     </a>
-    <ul class="nav-links">
+    <button class="hamburger-btn" id="navToggleBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="mainNavLinks">
       <li><a href="attendance.html">Attendance</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="reports.html">Reports</a></li>
       <li><a href="students.html" class="active">Students</a></li>
-      <li><span class="faculty-nav-badge" id="navTeacherPill">👨‍🏫 Instructor</span></li>
+      <li><span class="faculty-nav-badge" id="navTeacherPill">Instructor</span></li>
       <li><a href="index.html" class="btn-signout" onclick="localStorage.removeItem('session_teacher_profile')">Sign Out</a></li>
     </ul>
   </header>
@@ -82,7 +86,7 @@
           <p style="color: var(--text-muted); font-size: 0.9rem;">Import a class spreadsheet or manually register students.</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button class="btn btn-gold" onclick="document.getElementById('excelFileInput').click()">📁 Import .XLSX / CSV</button>
+          <button class="btn btn-gold" onclick="document.getElementById('excelFileInput').click()">Import .XLSX / CSV</button>
           <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleExcelUpload(event)">
           <button class="btn btn-primary" onclick="showModal()">+ Add New Student</button>
         </div>
@@ -139,6 +143,7 @@
     </div>
   </main>
 
+  <!-- Modal Registration Dialog -->
   <div class="modal-backdrop" id="addStudentModal">
     <div class="modal-box">
       <h3 style="color: var(--cu-maroon); margin-bottom: 1rem;">Register Student</h3>
@@ -177,8 +182,11 @@
         </div>
         <div class="form-group">
           <label>Parent Personal Email</label>
-          <input type="email" id="mParentEmail" placeholder="e.g. parent@gmail.com" required>
+          <input type="email" id="mParentEmail" placeholder="e.g. parent@gmail.com" required autocomplete="off">
           <small style="color: var(--text-muted); font-size: 0.8rem;">Must end in <code>@gmail.com</code></small>
+          <div id="parentEmailWarning" class="live-warning-message">
+            Invalid parent email: Personal alerts must end in @gmail.com
+          </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-bottom: 0.5rem;">
           <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
@@ -193,6 +201,10 @@
   </footer>
 
   <script>
+    document.getElementById("navToggleBtn").addEventListener("click", function() {
+      document.getElementById("mainNavLinks").classList.toggle("nav-open");
+    });
+
     function loadTeacherNav() {
       const stored = localStorage.getItem("session_teacher_profile");
       if (stored) {
@@ -200,11 +212,18 @@
           const profile = JSON.parse(stored);
           let formattedName = profile.name || "Instructor";
           formattedName = formattedName.replace(/^Prof\.\s*/i, "Instructor ");
-          document.getElementById("navTeacherPill").innerText = `👨‍🏫 ${formattedName}`;
+          if (formattedName.includes(",")) {
+            const parts = formattedName.replace(/^Instructor\s*/i, "").split(",");
+            formattedName = `Instructor ${parts[1].trim()}${parts[0].trim()}`;
+          }
+          document.getElementById("navTeacherPill").innerText = formattedName;
         } catch (e) {}
       }
     }
     loadTeacherNav();
+
+    const parentEmailInput = document.getElementById("mParentEmail");
+    const parentEmailWarning = document.getElementById("parentEmailWarning");
 
     function isValidParentEmail(email) {
       if (!email) return false;
@@ -212,6 +231,22 @@
       const gmailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@gmail\.com$/;
       return gmailPattern.test(lower);
     }
+
+    parentEmailInput.addEventListener("input", function() {
+      const val = parentEmailInput.value.trim().toLowerCase();
+      if (!val) {
+        parentEmailWarning.style.display = "none";
+        parentEmailInput.classList.remove("input-invalid");
+        return;
+      }
+      if (!isValidParentEmail(val)) {
+        parentEmailWarning.style.display = "block";
+        parentEmailInput.classList.add("input-invalid");
+      } else {
+        parentEmailWarning.style.display = "none";
+        parentEmailInput.classList.remove("input-invalid");
+      }
+    });
 
     function getStoredStudents() {
       const stored = localStorage.getItem("cu_students");
@@ -317,8 +352,9 @@
       const emailInput = document.getElementById("mParentEmail").value.trim().toLowerCase();
 
       if (!isValidParentEmail(emailInput)) {
-        alert("Invalid Email: Parent personal email must strictly end with @gmail.com");
-        document.getElementById("mParentEmail").focus();
+        parentEmailWarning.style.display = "block";
+        parentEmailInput.classList.add("input-invalid");
+        parentEmailInput.focus();
         return;
       }
 
@@ -347,8 +383,10 @@
       setStoredStudents(students);
       hideModal();
       document.querySelector("#addStudentModal form").reset();
+      parentEmailWarning.style.display = "none";
+      parentEmailInput.classList.remove("input-invalid");
       renderStudents();
-      alert(`Student ${newStudent.name} registered successfully!`);
+      alert(`Student ${newStudent.name} registered successfully.`);
     }
 
     function deleteStudent(id) {
@@ -416,7 +454,9 @@
     }
     
     function hideModal() { 
-      document.getElementById("addStudentModal").style.display = "none"; 
+      document.getElementById("addStudentModal").style.display = "none";
+      parentEmailWarning.style.display = "none";
+      parentEmailInput.classList.remove("input-invalid");
     }
 
     window.onclick = function(event) {
