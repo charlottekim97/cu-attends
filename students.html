@@ -94,7 +94,7 @@
 
       <div class="upload-zone">
         <small style="color: var(--text-main);">
-          <strong>Excel Column Headers:</strong> 
+          <strong>Accepted Excel Column Headers:</strong> 
           <code>Student ID</code>, <code>Student Name</code>, <code>Course</code>, <code>Block</code>, <code>Section Code</code>, <code>Subject</code>, <code>Parent Name</code>, <code>Parent Email</code> (must end in @gmail.com)
         </small>
       </div>
@@ -197,7 +197,7 @@
   </div>
 
   <footer>
-    &copy; 2026 Capitol University - CU Attends. All rights reserved.[cite: 6]
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
   </footer>
 
   <script>
@@ -271,6 +271,7 @@
     function setStoredStudents(data) {
       localStorage.setItem("cu_students", JSON.stringify(data));
       populateFilterDropdowns();
+      renderStudents();
     }
 
     function populateFilterDropdowns() {
@@ -339,7 +340,7 @@
           <td>${st.course} - ${st.block}</td>
           <td><code>${st.secCode || '-'}</code> ${st.subject ? '(' + st.subject + ')' : ''}</td>
           <td>${st.parent}</td>
-          <td><strong style="color: var(--cu-maroon);">${st.parentEmail}</strong></td>
+          <td><strong style="color: var(--cu-maroon);">${st.parentEmail || '(None)'}</strong></td>
           <td><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="deleteStudent('${st.id}')">Remove</button></td>
         `;
         tbody.appendChild(tr);
@@ -385,7 +386,6 @@
       document.querySelector("#addStudentModal form").reset();
       parentEmailWarning.style.display = "none";
       parentEmailInput.classList.remove("input-invalid");
-      renderStudents();
       alert(`Student ${newStudent.name} registered successfully.`);
     }
 
@@ -393,10 +393,10 @@
       if (confirm(`Remove student ${id}?`)) {
         const remaining = getStoredStudents().filter(s => s.id !== id);
         setStoredStudents(remaining);
-        renderStudents();
       }
     }
 
+    /* Functional Excel & CSV Parser */
     function handleExcelUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -406,46 +406,90 @@
         try {
           const data = new Uint8Array(evt.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet);
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
           if (!rows || rows.length === 0) {
             alert("Uploaded spreadsheet is empty.");
+            e.target.value = "";
             return;
           }
 
-          const existing = getStoredStudents();
-          let count = 0;
-          let skipped = 0;
+          // Case-insensitive key lookup helper
+          const findValue = (row, candidates) => {
+            const keys = Object.keys(row);
+            for (let c of candidates) {
+              const matchedKey = keys.find(k => k.trim().toLowerCase() === c.toLowerCase());
+              if (matchedKey && row[matchedKey] !== undefined && row[matchedKey] !== "") {
+                return String(row[matchedKey]).trim();
+              }
+            }
+            return "";
+          };
+
+          const existingStudents = getStoredStudents();
+          let addedCount = 0;
+          let updatedCount = 0;
+          let invalidEmailCount = 0;
 
           rows.forEach(r => {
-            const stuId = String(r["Student ID"] || r["ID"] || r["id"] || "").trim().replace(/@g\.cu\.edu\.ph/gi, "");
-            const stuName = String(r["Student Name"] || r["Name"] || r["name"] || "").trim();
-            const course = String(r["Course"] || r["course"] || "").trim();
-            const block = String(r["Block"] || r["block"] || "").trim();
-            const secCode = String(r["Section Code"] || r["Sec Code"] || r["Section"] || r["secCode"] || "").trim();
-            const subject = String(r["Subject"] || r["Subject Description"] || r["Description"] || "").trim();
-            const parent = String(r["Parent Name"] || r["Parent"] || r["parent"] || "Parent / Guardian").trim();
+            const stuId = findValue(r, ["Student ID", "ID", "Student Number", "StudentID"]).replace(/@g\.cu\.edu\.ph/gi, "");
+            const stuName = findValue(r, ["Student Name", "Name", "Student", "Full Name"]);
+            const course = findValue(r, ["Course", "Program", "Degree"]);
+            const block = findValue(r, ["Block", "Section Block", "Year & Block"]);
+            const secCode = findValue(r, ["Section Code", "Sec Code", "Section", "Subject Code", "Course Code"]);
+            const subject = findValue(r, ["Subject Description", "Subject", "Description", "Course Description"]);
+            const parent = findValue(r, ["Parent Name", "Parent", "Guardian Name", "Guardian"]) || "Parent / Guardian";
             
-            let emailVal = String(r["Parent Personal Email"] || r["Parent Email"] || r["Email"] || r["email"] || r["personalEmail"] || "").trim().toLowerCase();
+            let parentEmail = findValue(r, ["Parent Personal Email", "Parent Email", "Email", "Parent_Email", "Personal Email"]).toLowerCase();
 
             if (stuId && stuName) {
-              if (emailVal && !isValidParentEmail(emailVal)) {
-                skipped++;
-                emailVal = "";
+              if (parentEmail && !isValidParentEmail(parentEmail)) {
+                invalidEmailCount++;
+                parentEmail = ""; // reset to blank if not ending in @gmail.com
               }
-              existing.push({ id: stuId, name: stuName, course, block, secCode, subject, parent, parentEmail: emailVal });
-              count++;
+
+              const newRecord = {
+                id: stuId,
+                name: stuName,
+                course: course || "BSIT 1",
+                block: block || "Block A",
+                secCode: secCode || "",
+                subject: subject || "",
+                parent: parent,
+                parentEmail: parentEmail
+              };
+
+              const existingIdx = existingStudents.findIndex(s => s.id === stuId);
+              if (existingIdx !== -1) {
+                existingStudents[existingIdx] = newRecord;
+                updatedCount++;
+              } else {
+                existingStudents.push(newRecord);
+                addedCount++;
+              }
             }
           });
 
-          setStoredStudents(existing);
-          renderStudents();
-          alert(`Successfully imported ${count} students.${skipped > 0 ? ` (${skipped} emails ignored because they were not @gmail.com)` : ''}`);
+          if (addedCount === 0 && updatedCount === 0) {
+            alert("No valid student rows recognized. Ensure your columns include 'Student ID' and 'Student Name'.");
+          } else {
+            setStoredStudents(existingStudents);
+            let msg = `Successfully processed spreadsheet!\n- Added: ${addedCount}\n- Updated: ${updatedCount}`;
+            if (invalidEmailCount > 0) {
+              msg += `\n- Flagged ${invalidEmailCount} email(s) that did not end in @gmail.com.`;
+            }
+            alert(msg);
+          }
         } catch (err) {
-          alert("Error processing Excel file. Make sure it has valid columns.");
+          console.error(err);
+          alert("Error processing file. Please ensure it is a valid .xlsx, .xls, or .csv document.");
+        } finally {
+          e.target.value = ""; // Clear file input so the user can import again
         }
       };
+
       reader.readAsArrayBuffer(file);
     }
 
