@@ -320,13 +320,14 @@
       </div>
     </div>
 
-    <!-- Video Showcase Section -->
+    <!-- Official Walkthrough Video Tutorial -->
     <div class="card">
-      <h3 style="color: var(--cu-maroon);">Campus Orientation & Video Briefing</h3>
-      <p style="color: var(--text-muted); font-size: 0.88rem;">Official university orientation video and system usage guidelines.</p>
+      <h3 style="color: var(--cu-maroon);">CU Attends System Walkthrough & Tutorial</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">Official video demonstration guiding faculty and parents through portal navigation and system features.</p>
       <div class="video-container">
-        <video controls poster="slide1.jpg">
-          <source src="orientation.mp4" type="video/mp4">
+        <video controls preload="metadata">
+          <source src="tutorial.mp4" type="video/mp4">
+          <source src="tutorial.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
       </div>
@@ -334,7 +335,7 @@
   </main>
 
   <footer>
-    &copy; 2026 Capitol University - CU Attends. All rights reserved.[cite: 6]
+    &copy; 2026 Capitol University - CU Attends. All rights reserved.
   </footer>
 
   <script>
@@ -350,11 +351,11 @@
 
       if (cleaned.includes(",")) {
         const parts = cleaned.split(",").map(p => p.trim());
-        return `Instructor ${parts[1]}${parts[0]}`;
+        return `Instructor ${parts[1]} ${parts[0]}`;
       } else if (cleaned.includes(".")) {
         const parts = cleaned.split(".").map(p => p.trim());
         const cap = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        return `Instructor ${cap(parts[1])}${cap(parts[0])}`;
+        return `Instructor ${cap(parts[1])} ${cap(parts[0])}`;
       }
 
       const words = cleaned.split(/\s+/).filter(Boolean);
